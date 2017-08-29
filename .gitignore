@@ -1,2 +1,5 @@
 # virtualenv directory
 env/
+
+# ansible retries
+*.retry
