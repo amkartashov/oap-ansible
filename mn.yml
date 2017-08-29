@@ -1,0 +1,3 @@
+- hosts: mn
+  roles:
+  - role: mn
