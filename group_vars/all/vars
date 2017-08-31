@@ -10,4 +10,5 @@ frontnet: 10.32.4.0/24
 ansible_ssh_pass: "{{ vault_ansible_ssh_pass }}"
 
 # leave as is below
+ansible_connection: paramiko
 ansible_python_interpreter: /usr/bin/env python
