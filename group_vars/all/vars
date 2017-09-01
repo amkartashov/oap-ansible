@@ -1,12 +1,16 @@
 ---
 # file: group_vars/all
-# change below
+##### change below #####
 backnet: 10.32.0.0/24
 frontnet: 10.32.4.0/24
-# change above
+oa_distr_url: https://somewhere.odin.com/path/to/oa.tar
+oa_distr_unpack_here: /root/
+mn_hostname: oss.testoa.psteam.int.zone
+##### change above #####
 
 # sensitive parameters, change in vault with
 # ansible-vault create inventory/group_vars/all/vault
+cp_admin_pass: "{{ vault_cp_admin_pass }}"
 ansible_ssh_pass: "{{ vault_ansible_ssh_pass }}"
 
 # leave as is below

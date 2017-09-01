@@ -1,2 +1,12 @@
-- name: test
-  file: path=/tmp/test state=directory
+- name: hwcheck
+  include: hwcheck.yml
+  when: hwcheck is defined and hwcheck
+- name: check if /usr/local/pem exists
+  stat: path=/usr/local/pem
+  register: pem_root
+- name: install
+  include: install.yml
+  when: 
+  - hwcheck is not defined or not hwcheck
+  - not pem_root.stat.exists
+

@@ -1,0 +1,2 @@
+- name: hwcheck
+  file: path=/tmp/hwcheck state=directory
