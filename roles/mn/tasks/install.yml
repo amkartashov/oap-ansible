@@ -1,43 +1,46 @@
-- name: yum update
-  yum: name='*' state=latest
-- name: disable and stop firewall
-  service: name=firewalld enabled=no state=stopped
-- name: "distr_archive={{ oa_distr_url | regex_replace('^.*/([^/]+)$', '\\1') }}"
-  set_fact:
-    distr_archive: "{{ oa_distr_url | regex_replace('^.*/([^/]+)$', '\\1') }}"
-- name: "distr_archive_path={{ oa_distr_unpack_here + '/' + distr_archive }}"
-  set_fact:
-    distr_archive_path: "{{ oa_distr_unpack_here + '/' + distr_archive }}" 
-- name: "communication_ip={{ ansible_all_ipv4_addresses | ipaddr(backnet) | first }}"
-  set_fact:
-    communication_ip: "{{ ansible_all_ipv4_addresses | ipaddr(backnet) | first }}"
-- name: set hostname to {{ mn_hostname }}
-  hostname: 
-    name: "{{ mn_hostname }}"
-- name: download distribution archive from {{ oa_distr_url }} to {{ distr_archive_path }}
-  get_url:
-    dest: "{{ distr_archive_path }}"
-    tmp_dest: "{{ oa_distr_unpack_here }}"
-    url: "{{ oa_distr_url }}"
-  register: download_result
-- name: check archive content
-  command: "tar --exclude='*/*' -tf {{ distr_archive_path }}"
-  args:
-    warn: no
-  changed_when: false
-  register: check_archive_result
-- name: "distr_path={{ oa_distr_unpack_here + '/' + check_archive_result.stdout_lines[0] }}"
-  set_fact:
-    distr_path: "{{ oa_distr_unpack_here + '/' + check_archive_result.stdout_lines[0] }}"
-- name: unpack distribution from {{ distr_archive_path }} to {{ distr_path }}
-  unarchive:
-    src: "{{ distr_archive_path }}"
-    dest: "{{ oa_distr_unpack_here }}"
-    remote_src: yes
-    creates: "{{ distr_path }}"
-- name: run installation script
-  command: >
-    {{ distr_path + 'install.py'}}
-    --batch --verbose
-    --communication_ip {{ communication_ip }}
-    --password {{ cp_admin_pass | quote }} 
+- name: check if /usr/local/pem exists
+  stat: path=/usr/local/pem
+  register: pem_root
+- name: install OA management node
+  when: not pem_root.stat.exists
+  block:
+  - name: yum update
+    yum: name='*' state=latest
+  - name: disable and stop firewall
+    service: name=firewalld enabled=no state=stopped
+  - name: "distr_archive={{ oa_distr_url | regex_replace('^.*/([^/]+)$', '\\1') }}"
+    set_fact:
+      distr_archive: "{{ oa_distr_url | regex_replace('^.*/([^/]+)$', '\\1') }}"
+  - name: "distr_archive_path={{ oa_distr_unpack_here + '/' + distr_archive }}"
+    set_fact:
+      distr_archive_path: "{{ oa_distr_unpack_here + '/' + distr_archive }}" 
+  - name: set hostname to {{ mn_hostname }}
+    hostname: 
+      name: "{{ mn_hostname }}"
+  - name: download distribution archive from {{ oa_distr_url }} to {{ distr_archive_path }}
+    get_url:
+      dest: "{{ distr_archive_path }}"
+      tmp_dest: "{{ oa_distr_unpack_here }}"
+      url: "{{ oa_distr_url }}"
+    register: download_result
+  - name: check archive content
+    command: "tar --exclude='*/*' -tf {{ distr_archive_path }}"
+    args:
+      warn: no
+    changed_when: false
+    register: check_archive_result
+  - name: "distr_path={{ oa_distr_unpack_here + '/' + check_archive_result.stdout_lines[0] }}"
+    set_fact:
+      distr_path: "{{ oa_distr_unpack_here + '/' + check_archive_result.stdout_lines[0] }}"
+  - name: unpack distribution from {{ distr_archive_path }} to {{ distr_path }}
+    unarchive:
+      src: "{{ distr_archive_path }}"
+      dest: "{{ oa_distr_unpack_here }}"
+      remote_src: yes
+      creates: "{{ distr_path }}"
+  - name: run installation script
+    command: >
+      {{ distr_path + 'install.py' }}
+      --batch --verbose
+      --communication_ip {{ communication_ip }}
+      --password {{ cp_admin_pass | quote }} 
