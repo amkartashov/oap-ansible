@@ -44,3 +44,15 @@
       --batch --verbose
       --communication_ip {{ communication_ip }}
       --password {{ cp_admin_pass | quote }} 
+- name: install license
+  block:
+  - name: copy license file
+    copy:
+      src: "{{ license_file }}"
+      dest: /tmp/oa.license.xml
+    changed_when: False
+  - name: install license
+    oa_license: license_file=/tmp/oa.license.xml
+  - name: remove license file
+    file: path=/tmp/oa.license.xml state=absent
+    changed_when: False

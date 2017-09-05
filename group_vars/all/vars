@@ -6,6 +6,7 @@ frontnet: 10.32.4.0/24
 oa_distr_url: https://somewhere.odin.com/path/to/oa.tar
 oa_distr_unpack_here: /root/
 mn_hostname: oss.testoa.psteam.int.zone
+license_file: files/PA.80001033.0000.xml
 ##### change above #####
 
 # sensitive parameters, change in vault with
