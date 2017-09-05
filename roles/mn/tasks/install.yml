@@ -56,3 +56,5 @@
   - name: remove license file
     file: path=/tmp/oa.license.xml state=absent
     changed_when: False
+- name: install updates
+  oa_update:
