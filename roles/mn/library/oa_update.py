@@ -26,7 +26,7 @@ def main():
         hotfixes = [regexp.match(kb).group(1) for kb in
                     filter(lambda x: '* KB' in x, stdout.split('\n'))]
         rc, stdout, stderr = module.run_command(['oa-update', '--batch', '--install'], check_rc=True)
-        module.exit_json(hotfixes=list(), changed=True)
+        module.exit_json(hotfixes=hotfixes, changed=True)
     else:
         module.exit_json(hotfixes=list())
 
