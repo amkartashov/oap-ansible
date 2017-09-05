@@ -151,7 +151,7 @@ class OaApi:
     def upload_license(self, license):
         self.sync.pem.uploadLicense(license=xmlrpclib.Binary(license.content))
 
-    def remove_license(key_number):
+    def remove_license(self ,key_number):
         self.sync.pem.removeLicense(key_id=key_number)
 
     
