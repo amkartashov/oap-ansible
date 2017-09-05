@@ -6,6 +6,7 @@ import re
 import xmlrpclib
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError
+from urllib2 import HTTPError
 
 import poaupdater.uLogging
 from poaupdater import openapi
@@ -41,6 +42,8 @@ class OaApi:
         def __init__(self, api, name):
             self.name = name
             self.api = api
+        def __repr__(self):
+            return '<OA OpenAPI method: %s>' % name
         def __getattr__(self, name):
             if self.name == '':
                 return self.__class__(self.api, name)
@@ -55,6 +58,18 @@ class OaApi:
     class _asyncw_method(_method):
         def __call__(self, **kwargs):
             return self.api.async_call_wait(self.name, **kwargs)
+
+    class _aps_method:
+        def __init__(self, api, verb, path='/aps/2/'):
+            self.api = api
+            self.verb = verb
+            self.path = path
+        def __repr__(self):
+            return "<OA APS REST API %s %s%s>" % (self.verb, self.api._apsc_uri, self.path)
+        def __getattr__(self, path):
+            return self.__class__(self.api, self.verb, self.path + path + '/')
+        def __call__(self, **kwargs):
+            return self.api.aps_call(self.verb, self.path, **kwargs)
     
     async_timeout = 120
     
@@ -65,6 +80,12 @@ class OaApi:
         self.sync = OaApi._sync_method(self, '')
         self.async = OaApi._async_method(self, '')
         self.asyncw = OaApi._asyncw_method(self, '')
+        self.get_aps_token()
+        self._apsapi = apsapi.API(self._apsc_uri)
+        self.GET = OaApi._aps_method(self, 'GET')
+        self.PUT = OaApi._aps_method(self, 'PUT')
+        self.POST = OaApi._aps_method(self, 'POST')
+        self.DELETE = OaApi._aps_method(self, 'DELETE')
     
     def init_logging(self, filename=None):
         poaupdater.uLogging.log_to_console = False
@@ -84,6 +105,26 @@ class OaApi:
             raise OaError("OpenAPI error: %s" % e.error_message, e)
         return result
     
+    def get_aps_token(self):
+        res = self.sync.pem.APS.getAccountToken(account_id=1, subscription_id=0)
+        self._aps_token = res['aps_token']
+        self._apsc_uri = res['controller_uri']
+    
+    def aps_call(self, verb, path, rql=None, headers=None, data=None):
+        headers = headers or {}
+        headers['APS-Token'] = self._aps_token
+        p = path + rql if rql else path
+        try:
+            res = self._apsapi.call(verb, p, headers, data)
+        except HTTPError as e:
+            if e.code == 403 and hasattr(e, 'aps') and e.aps.message == 'Token expired':
+                self.get_aps_token()
+                headers['APS-Token'] = self._aps_token
+                res = self._apsapi.call(verb, p, headers, data)
+            else:
+                raise e
+        return res
+
     def async_call(self, methodname, **kwargs):
         """Run async api call
         
@@ -154,5 +195,10 @@ class OaApi:
     def remove_license(self, key_number):
         self.sync.pem.removeLicense(key_id=key_number)
 
-    
+    def get_license_number(self):
+        if self.has_active_license():
+            rql='?implementing(http://parallels.com/aps/types/pa/productLicense/1.1)'
+            return self.GET.resources(rql=rql)[0].keyNumber
+        else:
+            return None
 
