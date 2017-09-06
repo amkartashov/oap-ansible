@@ -15,6 +15,7 @@ from copy import deepcopy
 import poaupdater.uLogging
 from poaupdater import openapi
 from poaupdater import apsapi
+from poaupdater.apsapi import JsonNode
 from poaupdater.openapi import OpenAPIError
 from poaupdater.uConfig import Config
 
@@ -39,19 +40,17 @@ def aps_type_generator(get_aps_type_schema,
     # either type id or schema should be specified
     if typeid:
         schema = get_aps_type_schema(typeid)
-    # schema is either json string or json object (dict)
-    typejson = schema if isinstance(schema, dict) else json.loads(schema)
-    schema_md5 = hashlib.md5(json.dumps(typejson, sort_keys=True)).hexdigest()
+    schema_md5 = hashlib.md5(schema.__repr__()).hexdigest()
     if schema_md5 in aps_types: # met this type before
         return aps_types[schema_md5]
-    typetype = typejson.get('type', 'object')
-    name = name or typejson.get('name', typetype)
+    typetype = getattr(schema, 'type', 'object')
+    name = name or getattr(schema, 'name', typetype)
     if typetype in primitive_types:
         t = type(
                 str(name + schema_md5),
                 (primitive_types[typetype],),
                 {
-                    '_aps_type_schema': typejson,
+                    '_aps_type_schema': schema,
                     '_aps_type_schema_md5': schema_md5,
                     '_aps_type_name': name,
                     '_aps_type_id': name,
@@ -59,14 +58,14 @@ def aps_type_generator(get_aps_type_schema,
         aps_types[schema_md5] = t
     elif typetype == 'array':
         itemstype = aps_type_generator(get_aps_type_schema, 
-                schema=typejson['items'], parent_typeid=parent_typeid or typeid)
+                schema=schema['items'], parent_typeid=parent_typeid or typeid)
         typetype = 'array of ' + itemstype._aps_type_id
-        name = name or typejson.get('name', typetype)
+        name = name or getattr(schema, 'name', typetype)
         t = type(
                 str(name + schema_md5),
                 (ListType,),
                 { 
-                    '_aps_type_schema': typejson,
+                    '_aps_type_schema': schema,
                     '_aps_type_schema_md5': schema_md5,
                     '_aps_type_name': name,
                     '_aps_type_id': name,
@@ -74,16 +73,16 @@ def aps_type_generator(get_aps_type_schema,
                 })
         aps_types[schema_md5] = t
     elif typetype == 'object':
-        typeid = typejson.get('id')
-        implements = typejson.get('implements')
-        properties = typejson.get('properties')
-        structures = typejson.get('structures')
+        typeid = getattr(schema, 'id', None)
+        implements = getattr(schema, 'implements', None)
+        properties = getattr(schema, 'properties', None)
+        structures = getattr(schema, 'structures', None)
         basetypes = list()
         if implements:
             for t in implements:
                 basetypes.append(aps_type_generator(get_aps_type_schema, t))
         typeproperties = {
-                '_aps_type_schema': typejson,
+                '_aps_type_schema': schema,
                 '_aps_type_schema_md5': schema_md5,
                 '_aps_type_name': name,
                 '_aps_type_id': typeid,
@@ -297,10 +296,10 @@ class OaApi:
         res = self.GET.types(rql='?id='+typeid)
         if not res:
             return None
-        res = res[0]._dump_()
+        res = res[0]
         if '#' in typeid:
             structure_name = typeid.split('#')[1]
-            res = res['structures'][structure_name]
+            res = res.structures[structure_name]
             res['name'] = structure_name
             res['id'] = typeid
         return res
