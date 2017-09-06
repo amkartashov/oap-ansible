@@ -68,6 +68,8 @@ class OaApi:
             return "<OA APS REST API %s %s%s>" % (self.verb, self.api._apsc_uri, self.path)
         def __getattr__(self, path):
             return self.__class__(self.api, self.verb, self.path + path + '/')
+        def __getitem__(self, index):
+            return self.__class__(self.api, self.verb, self.path + str(index) + '/')
         def __call__(self, **kwargs):
             return self.api.aps_call(self.verb, self.path, **kwargs)
     
@@ -201,4 +203,8 @@ class OaApi:
             return self.GET.resources(rql=rql)[0].keyNumber
         else:
             return None
+
+    def get_aps_type_schema(self, typeid):
+        res = self.GET.types(rql='?id='+typeid)
+        return res[0] if res else None
 
