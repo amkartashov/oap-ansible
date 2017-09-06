@@ -1,3 +1,3 @@
-- hosts: mn
+- hosts: infrastructure:&g_mn
   roles:
   - role: mn

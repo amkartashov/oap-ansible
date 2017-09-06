@@ -1,1 +1,35 @@
+# For servers in [infrastructure] group:
+# 1) modify connection details (ansible_*);
+# 2) leave server names unchanged.
+# 3) If there is no such server, remove it from [infrastructure]
+
+[infrastructure]
 mn ansible_host=10.32.0.51
+
+
+### !!! DONT MODIFY SERVER GROUPS BELOW
+
+[g_mn]
+mn
+
+[g_pps]
+pps
+
+[g_ns]
+ns1
+ns2
+
+[g_ui]
+ui
+
+[g_baapp]
+baapp
+
+[g_badb]
+badb
+
+[g_baos]
+baos
+
+[g_drp]
+drp
