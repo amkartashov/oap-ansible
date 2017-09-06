@@ -8,15 +8,14 @@
     yum: name='*' state=latest
   - name: disable and stop firewall
     service: name=firewalld enabled=no state=stopped
+  - name: set hostname to {{ hostname }}
+    hostname: "name={{ hostname }}"
   - name: "distr_archive={{ oa_distr_url | regex_replace('^.*/([^/]+)$', '\\1') }}"
     set_fact:
       distr_archive: "{{ oa_distr_url | regex_replace('^.*/([^/]+)$', '\\1') }}"
   - name: "distr_archive_path={{ oa_distr_unpack_here + '/' + distr_archive }}"
     set_fact:
       distr_archive_path: "{{ oa_distr_unpack_here + '/' + distr_archive }}" 
-  - name: set hostname to {{ mn_hostname }}
-    hostname: 
-      name: "{{ mn_hostname }}"
   - name: download distribution archive from {{ oa_distr_url }} to {{ distr_archive_path }}
     get_url:
       dest: "{{ distr_archive_path }}"

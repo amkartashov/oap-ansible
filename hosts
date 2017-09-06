@@ -4,7 +4,7 @@
 # 3) If there is no such server, remove it from [infrastructure]
 
 [infrastructure]
-mn ansible_host=10.32.0.51
+mn ansible_host=10.32.0.51 hostname=oss.testoa.psteam.int.zone
 
 
 ### !!! DONT MODIFY SERVER GROUPS BELOW
