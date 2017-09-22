@@ -2,104 +2,16 @@
 
 import os
 import time
-import json
-import hashlib
-import re
 import xmlrpclib
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError
 from urllib2 import HTTPError
-from types import BooleanType, IntType, FloatType, StringType, ListType
-from copy import deepcopy
 
 import poaupdater.uLogging
 from poaupdater import openapi
 from poaupdater import apsapi
-from poaupdater.apsapi import JsonNode
 from poaupdater.openapi import OpenAPIError
 from poaupdater.uConfig import Config
-
-
-primitive_types = { 
-    'boolean': IntType, # we can't subclass Boolean
-    'integer': IntType,
-    'number': FloatType,
-    'string': StringType
-    }                                                                
-
-# memoization: mapping schema md5sum -> type
-aps_types = dict()
-
-def aps_type_generator(get_aps_type_schema,
-        typeid=None, 
-        schema=None, 
-        name=None,
-        parent_typeid=None,
-        ):
-    global aps_types
-    # either type id or schema should be specified
-    if typeid:
-        schema = get_aps_type_schema(typeid)
-    schema_md5 = hashlib.md5(schema.__repr__()).hexdigest()
-    if schema_md5 in aps_types: # met this type before
-        return aps_types[schema_md5]
-    typetype = getattr(schema, 'type', 'object')
-    name = name or getattr(schema, 'name', typetype)
-    if typetype in primitive_types:
-        t = type(
-                str(name + schema_md5),
-                (primitive_types[typetype],),
-                {
-                    '_aps_type_schema': schema,
-                    '_aps_type_schema_md5': schema_md5,
-                    '_aps_type_name': name,
-                    '_aps_type_id': name,
-                })
-        aps_types[schema_md5] = t
-    elif typetype == 'array':
-        itemstype = aps_type_generator(get_aps_type_schema, 
-                schema=schema['items'], parent_typeid=parent_typeid or typeid)
-        typetype = 'array of ' + itemstype._aps_type_id
-        name = name or getattr(schema, 'name', typetype)
-        t = type(
-                str(name + schema_md5),
-                (ListType,),
-                { 
-                    '_aps_type_schema': schema,
-                    '_aps_type_schema_md5': schema_md5,
-                    '_aps_type_name': name,
-                    '_aps_type_id': name,
-                    '_itemstype': itemstype,
-                })
-        aps_types[schema_md5] = t
-    elif typetype == 'object':
-        typeid = getattr(schema, 'id', None)
-        implements = getattr(schema, 'implements', None)
-        properties = getattr(schema, 'properties', None)
-        structures = getattr(schema, 'structures', None)
-        basetypes = list()
-        if implements:
-            for t in implements:
-                basetypes.append(aps_type_generator(get_aps_type_schema, t))
-        typeproperties = {
-                '_aps_type_schema': schema,
-                '_aps_type_schema_md5': schema_md5,
-                '_aps_type_name': name,
-                '_aps_type_id': typeid,
-                }
-        if properties:
-            for prop in properties:
-                typeproperties[prop] = aps_type_generator(get_aps_type_schema, 
-                        schema=properties[prop],
-                        parent_typeid=parent_typeid or typeid
-                        )
-        t = type(str(name + schema_md5), tuple(basetypes), typeproperties)
-        aps_types[schema_md5] = t
-    elif typetype.startswith('http'): # reference to another type
-        t = aps_type_generator(get_aps_type_schema, typetype)
-    else: # typetype is structure in parent type
-        t = aps_type_generator(get_aps_type_schema, parent_typeid+'#'+typetype, parent_typeid=parent_typeid)
-    return t
 
 
 class OaError(Exception):
