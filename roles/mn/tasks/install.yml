@@ -57,3 +57,6 @@
     changed_when: False
 - name: install updates
   oa_update:
+- name: install modules
+  oa_modules:
+    modules: "{{ oa_modules }}"

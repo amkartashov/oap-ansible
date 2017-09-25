@@ -6,6 +6,21 @@ frontnet: 10.32.4.0/24
 oa_distr_url: https://somewhere.odin.com/path/to/oa.tar
 oa_distr_unpack_here: /root/
 license_file: files/PA.80001033.0000.xml
+# uncomment needed modules
+oa_modules:
+#- PBA
+#- LegacyMigration
+#- Migration
+#- saml2-idp
+#- Linux Mail
+#- Messaging and Collaboration
+#- PACI
+#- Platform
+#- Linux Shared
+#- Windows Shared
+#- SHM
+#- Parallels Panel
+#- Virtualization
 ##### change above #####
 
 # sensitive parameters, change in vault with

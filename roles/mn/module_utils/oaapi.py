@@ -216,3 +216,26 @@ class OaApi:
             res['id'] = typeid
         return res
 
+    def get_installed_modules(self):
+        return self.sync.pem.packaging.listInstalledModules()
+
+    def install_module(self, module_name):
+        """ List of available modules:
+        [root@oss ~]# grep 'MODULE id=' oa-7.1-3256/*/*/*.mdl | grep -v hide_everywhere | grep -v essentials | awk -F'"' '{print "\"" $2 "\": " $6 }'
+        "PBA": Billing
+        "LegacyMigration": Legacy Migration Manager
+        "Migration": Migration Manager
+        "saml2-idp": SAML2 Identity Provider
+        "Linux Mail": Linux Mail Hosting
+        "Messaging and Collaboration": Messaging and Collaboration
+        "PACI": Cloud Infrastructure
+        "Platform": Platform
+        "Linux Shared": Linux Shared Hosting
+        "Windows Shared": Windows Shared Hosting
+        "SHM": WebHosting Plesk
+        "Parallels Panel": Plesk
+        "Virtualization": Virtualization (Virtuozzo containers)
+        """
+        self.sync.pem.packaging.installModule(short_name=module_name)
+        self.sync.pem.packaging.toggleModuleUIConfigurationOnHosts(short_name=module_name, enable=True)
+
