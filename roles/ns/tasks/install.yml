@@ -1,0 +1,14 @@
+- name: yum update
+  yum: name='*' state=latest
+- name: disable and stop firewall
+  service: name=firewalld enabled=no state=stopped
+- name: set hostname to {{ hostname }}
+  hostname: "name={{ hostname }}"
+- name: register in OAP
+  delegate_to: mn
+  oa_register_ns:
+    backnet: "{{ communication_ip }}"
+    frontnet: "{{ frontnet_ip }}"
+    login: "{{ ansible_user | default('root') }}"
+    password: "{{ ansible_ssh_pass }}"
+

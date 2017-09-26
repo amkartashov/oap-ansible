@@ -1,0 +1,3 @@
+- hosts: infrastructure:&g_ns
+  roles:
+  - role: ns

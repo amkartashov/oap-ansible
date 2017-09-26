@@ -1,0 +1,12 @@
+- name: "communication_ip={{ ansible_all_ipv4_addresses | ipaddr(backnet) | first }}"
+  set_fact:
+    communication_ip: "{{ ansible_all_ipv4_addresses | ipaddr(backnet) | first }}"
+- name: "frontnet_ip={{ ansible_all_ipv4_addresses | ipaddr(frontnet) | first }}"
+  set_fact:
+    frontnet_ip: "{{ ansible_all_ipv4_addresses | ipaddr(frontnet) | first }}"
+- name: hwcheck
+  include: hwcheck.yml
+  when: hwcheck is defined and hwcheck
+- name: install
+  include: install.yml
+  when: hwcheck is not defined or not hwcheck
