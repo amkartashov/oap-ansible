@@ -236,6 +236,26 @@ class OaApi:
         "Parallels Panel": Plesk
         "Virtualization": Virtualization (Virtuozzo containers)
         """
-        self.sync.pem.packaging.installModule(short_name=module_name)
-        self.sync.pem.packaging.toggleModuleUIConfigurationOnHosts(short_name=module_name, enable=True)
+        self.asyncw.pem.packaging.installModule(short_name=module_name)
+        self.asyncw.pem.packaging.toggleModuleUIConfigurationOnHosts(short_name=module_name, enable=True)
 
+    def is_node_registered(self, backnet):
+        rql = '?implementing(http://www.parallels.com/pa/pa-core-services/host-management/Host)'
+        hosts = self.GET.resources(rql=rql)
+        return backnet in [h['backnetIp'] for h in hosts]
+
+    def register_shared_node(self, backnet, login, password, frontnet=None,
+            new_hostname=None, role=None, role_params=None):
+        shared_ip = frontnet or backnet
+        net_conf = {'communication_ip': backnet, 'shared_ip': shared_ip}
+        if role_params:
+            _role_params = [ {'name': n, 'value': v} for n, v in role_params.items() ]
+        else:
+            _role_params = None
+        res = self.asyncw.pem.registerSharedNode(host=backnet, login=login, password=password,
+                network_config=net_conf, new_hostname=new_hostname,
+                role=role, role_params=_role_params)
+        return res.get('host_id')
+
+    def register_dns(self, backnet, login, password, frontnet, new_hostname=None):
+        return self.register_shared_node(backnet, login, password, frontnet, new_hostname, role='DNS_BIND')
